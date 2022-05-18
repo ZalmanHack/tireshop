@@ -1,0 +1,19 @@
+{
+  "services": [
+    {
+      "name": "шиномонтаж",
+      "dateOfStartWork": "",
+      "dateOfEndWork": "",
+      "totalPrice": 100,
+
+      "options": [
+        {
+          "name": "диаметр",
+          "value": "19",
+          "duration": 15,
+          "price": 100
+        }
+      ]
+    }
+  ]
+}

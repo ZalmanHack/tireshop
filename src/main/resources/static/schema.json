@@ -1,0 +1,23 @@
+{
+  "services": [
+    {
+      "name": "шиномонтаж",
+
+      "options": [
+        {
+          "name": "диаметр",
+          "type": "число",
+          "required": true,
+
+          "values": [
+            {
+              "value": "19",
+              "price": 100,
+              "duration": 0
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

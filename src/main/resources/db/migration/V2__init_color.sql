@@ -1,0 +1,9 @@
+INSERT INTO main.color (hex_color) VALUES ('000000');
+INSERT INTO main.color (hex_color) VALUES ('FFFFFF');
+INSERT INTO main.color (hex_color) VALUES ('888888');
+INSERT INTO main.color (hex_color) VALUES ('c7c7c7');
+INSERT INTO main.color (hex_color) VALUES ('25408f');
+INSERT INTO main.color (hex_color) VALUES ('e9242d');
+INSERT INTO main.color (hex_color) VALUES ('9c5a40');
+INSERT INTO main.color (hex_color) VALUES ('fecd04');
+INSERT INTO main.color (hex_color) VALUES ('41ad48');

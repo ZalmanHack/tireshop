@@ -1,0 +1,1 @@
+INSERT INTO main.usr (activation_code, active, email, first_name, last_name, new_email, password, phone, rating, username) VALUES (null, true, 'dobrenko44@gmail.com', 'Denis', 'Dobrenko', null, null, 79650745017, 5, 'denis');
