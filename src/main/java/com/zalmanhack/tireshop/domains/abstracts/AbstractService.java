@@ -7,6 +7,7 @@ import org.hibernate.validator.constraints.Length;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -24,6 +25,10 @@ public abstract class AbstractService {
     @Size(min = 1, max = 32)
     private String name;
 
+    @NotNull
+    private boolean composite = false;
+
     @Convert(converter = DurationConverter.class)
     private Duration intervalToOrder;
+
 }

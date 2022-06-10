@@ -12,10 +12,10 @@ import com.zalmanhack.tireshop.views.CarView;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import javax.validation.constraints.Null;
 import java.util.List;
 
 @RestController
@@ -42,8 +42,11 @@ public class CarController {
     }
 
     @GetMapping("/all/{id}")
-    public List<Car> getAllByUserId(@PathVariable Long id) {
-        return carService.findAllByUser(userService.findById(id));
+    @JsonView(value = {CarView.Public.class})
+    public List<Car> getAllByUserId(@PathVariable(required = false) Long id,
+                                    @Null @RequestParam(name = "removed", required = false) Boolean removed) {
+        System.out.println(id);
+        return carService.findAllByUser(userService.findById(id), removed);
     }
 
     @GetMapping("/{id}")

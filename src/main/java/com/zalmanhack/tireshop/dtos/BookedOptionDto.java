@@ -10,6 +10,5 @@ public class BookedOptionDto {
 
     private long id;
 
-    @NotNull
     private long bookedValueId;
 }

@@ -52,7 +52,7 @@ public class UserDto {
     private String activationCode;
 
     @NotNull
-    private Boolean active;
+    private boolean active;
 
     private Set<Role> roles;
 }

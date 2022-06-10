@@ -31,8 +31,10 @@ public class CarService {
         this.bookingService = bookingService;
     }
 
-    public List<Car> findAllByUser(User user) {
-        Optional<List<Car>> optionalCars = carRepo.findAllByUser(user);
+    public List<Car> findAllByUser(User user, Boolean removed) {
+        Optional<List<Car>> optionalCars = removed == null ?
+                carRepo.findAllByUser(user) :
+                carRepo.findByUserAndRemoved(user, removed);
         if(!optionalCars.isPresent()) {
             throw new RecordNotFoundException(Car.class);
         }

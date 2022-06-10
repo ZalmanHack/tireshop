@@ -2,21 +2,11 @@ package com.zalmanhack.tireshop.domains;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.zalmanhack.tireshop.domains.abstracts.AbstractOption;
-import com.zalmanhack.tireshop.domains.enums.OptionViewType;
-import com.zalmanhack.tireshop.utils.DurationConverter;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
-import org.hibernate.validator.constraints.Length;
 
 import javax.persistence.*;
-import javax.validation.constraints.Min;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.util.List;
 
 
 @Entity

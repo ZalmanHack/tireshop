@@ -60,11 +60,13 @@ public class User implements UserDetails {
     @Column(length = 320)
     private String newEmail;
 
+    @ToString.Exclude
     @OneToMany(fetch = FetchType.LAZY,
             cascade = CascadeType.ALL,
             mappedBy = "user")
     private List<Car> cars;
 
+    @ToString.Exclude
     @OneToMany(fetch = FetchType.LAZY,
             cascade = CascadeType.ALL,
             mappedBy = "user")
@@ -79,7 +81,7 @@ public class User implements UserDetails {
     private String activationCode;
 
     @NotNull
-    private Boolean active;
+    private boolean active;
 
     @ElementCollection(targetClass = Role.class, fetch = FetchType.EAGER)
     @CollectionTable(name = "user_role", joinColumns = @JoinColumn(name = "user_id"))
@@ -108,6 +110,6 @@ public class User implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return this.getActive();
+        return this.isActive();
     }
 }

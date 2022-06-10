@@ -46,6 +46,7 @@ public class Car {
     @JsonView(value = CarView.Internal.class)
     private User user;
 
+    @ToString.Exclude
     // cascade тут не нужен, так как при удалении автомобиля нам не нужно удалять заказ
     @OneToMany(fetch = FetchType.LAZY,
             mappedBy = "car")
@@ -56,6 +57,6 @@ public class Car {
     private double tireDiameter;
 
     @NotNull
-    @JsonView(value = CarView.Internal.class)
+    @JsonView(value = CarView.Public.class)
     private boolean removed = false;
 }

@@ -13,5 +13,6 @@ import java.util.Optional;
 @Repository
 public interface CarRepo extends CrudRepository<Car, Long>{
     Optional<List<Car>> findAllByUser(User user);
+    Optional<List<Car>> findByUserAndRemoved(User user, boolean removed);
     long countByUserIdAndRemovedIsFalse(long id);
 }

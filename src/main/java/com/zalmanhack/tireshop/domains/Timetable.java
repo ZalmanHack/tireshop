@@ -19,8 +19,8 @@ public class Timetable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
-    @Column(columnDefinition = "TIMESTAMP")
-    private LocalDateTime changedWorkTimeDate;
+    @Column(columnDefinition = "DATE")
+    private LocalDate changedWorkTimeDate;
 
     @Column(columnDefinition = "TIME")
     private LocalTime timeOfOpen;
