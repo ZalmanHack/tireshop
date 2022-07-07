@@ -9,11 +9,11 @@ import java.util.List;
 @Data
 public class BookingDto {
 
-    private long id;
+    @NotNull
+    private Long carId;
 
-    private long carId;
-
-    private long userId;
+    @NotNull
+    private Long userId;
 
     @NotBlank
     @Pattern(regexp = "(\\d{2}).(\\d{2}).(\\d{4}) (\\d{2}):(\\d{2}):(\\d{2})")

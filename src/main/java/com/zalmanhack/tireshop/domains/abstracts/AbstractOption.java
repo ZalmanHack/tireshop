@@ -11,6 +11,13 @@ import javax.validation.constraints.Size;
 @MappedSuperclass
 @ToString(includeFieldNames = true)
 public abstract class AbstractOption {
+
+    public AbstractOption() { }
+
+    public AbstractOption(String name) {
+        this.name = name;
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;

@@ -16,6 +16,15 @@ import java.time.LocalDateTime;
 @MappedSuperclass
 @ToString(includeFieldNames = true)
 public abstract class AbstractService {
+
+    public AbstractService() {}
+
+    public AbstractService(String name, boolean composite, Duration intervalToOrder) {
+        this.name = name;
+        this.composite = composite;
+        this.intervalToOrder = intervalToOrder;
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
@@ -30,5 +39,6 @@ public abstract class AbstractService {
 
     @Convert(converter = DurationConverter.class)
     private Duration intervalToOrder;
+
 
 }

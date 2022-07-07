@@ -1,0 +1,1 @@
+INSERT INTO main.user_role (user_id, roles) VALUES (1, 'USER');

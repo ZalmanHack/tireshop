@@ -1,9 +1,6 @@
 package com.zalmanhack.tireshop.handlers;
 
-import com.zalmanhack.tireshop.exceptions.ErrorDetails;
-import com.zalmanhack.tireshop.exceptions.ErrorMessage;
-import com.zalmanhack.tireshop.exceptions.RecordMaxCountException;
-import com.zalmanhack.tireshop.exceptions.RecordNotFoundException;
+import com.zalmanhack.tireshop.exceptions.*;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.FieldError;
@@ -19,7 +16,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
-    public class RestExceptionHandler {
+public class RestExceptionHandler {
 
     @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
     @ExceptionHandler(RecordNotFoundException.class)
@@ -56,6 +53,16 @@ import java.util.stream.Collectors;
                 HttpStatus.UNPROCESSABLE_ENTITY,
                 ex.getMessage(),
                 errorDetails,
+                ((ServletWebRequest) request).getRequest().getRequestURI());
+    }
+
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    @ExceptionHandler(TokenRefreshException.class)
+    public ErrorMessage TokenRefreshException(TokenRefreshException ex, WebRequest request) {
+        return new ErrorMessage(
+                HttpStatus.FORBIDDEN,
+                ex.getMessage(),
+                null,
                 ((ServletWebRequest) request).getRequest().getRequestURI());
     }
 }

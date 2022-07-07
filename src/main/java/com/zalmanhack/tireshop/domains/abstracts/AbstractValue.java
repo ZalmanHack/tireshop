@@ -14,6 +14,15 @@ import java.time.Duration;
 @MappedSuperclass
 @ToString(includeFieldNames = true)
 public class AbstractValue {
+
+    public AbstractValue() { }
+
+    public AbstractValue(String value, Duration duration, long price) {
+        this.value = value;
+        this.duration = duration;
+        this.price = price;
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;

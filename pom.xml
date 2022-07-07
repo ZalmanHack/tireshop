@@ -87,6 +87,29 @@
         </dependency>
 
 
+        <!-- https://mvnrepository.com/artifact/com.github.chhsiao90/modelmapper-module-java8-datatypes -->
+        <dependency>
+            <groupId>com.github.chhsiao90</groupId>
+            <artifactId>modelmapper-module-java8-datatypes</artifactId>
+            <version>1.2.1</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/com.github.chhsiao90/modelmapper-module-jsr310 -->
+        <dependency>
+            <groupId>com.github.chhsiao90</groupId>
+            <artifactId>modelmapper-module-jsr310</artifactId>
+            <version>1.2.1</version>
+        </dependency>
+
+
+
+        <!-- https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt</artifactId>
+            <version>0.9.1</version>
+        </dependency>
+
 
     </dependencies>
 

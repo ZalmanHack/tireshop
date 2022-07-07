@@ -1,7 +1,12 @@
 package com.zalmanhack.tireshop.configs;
 
+import org.modelmapper.AbstractProvider;
 import org.modelmapper.Converter;
 import org.modelmapper.ModelMapper;
+import org.modelmapper.Provider;
+import org.modelmapper.module.jdk8.Jdk8Module;
+import org.modelmapper.module.jsr310.Jsr310Module;
+import org.modelmapper.module.jsr310.Jsr310ModuleConfig;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,12 +22,12 @@ public class ModelMapperDtoConfig {
 
     @Bean
     public ModelMapper modelMapper() {
-        Converter<LocalDateTime, String> localDateConverter = context -> {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern(stamp);
-            return context.getSource() == null ? null : context.getSource().format(formatter);
-        };
         ModelMapper modelMapper = new ModelMapper();
-        modelMapper.addConverter(localDateConverter);
+        Jsr310ModuleConfig config = Jsr310ModuleConfig.builder()
+                .dateTimePattern(stamp) // default is yyyy-MM-dd HH:mm:ss
+                .build();
+        modelMapper.registerModule(new Jsr310Module(config));
+        modelMapper.registerModule(new Jdk8Module());
         return modelMapper;
     }
 }

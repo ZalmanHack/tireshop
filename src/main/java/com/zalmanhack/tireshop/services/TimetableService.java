@@ -30,4 +30,5 @@ public class TimetableService {
         result.addAll(timetableRepo.findByChangedWorkTimeDateGreaterThanEqualAndChangedWorkTimeDateLessThanEqualOrderByChangedWorkTimeDateAsc(start, end));
         return result;
     }
+
 }

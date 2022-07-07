@@ -15,6 +15,6 @@ public class WorkWeekService {
     }
 
     public boolean isWorkingDay(Week value) {
-        return workWeekRepo.existsByWeekDay(value);
+        return workWeekRepo.findByWeekDay(value).isWorking();
     }
 }
