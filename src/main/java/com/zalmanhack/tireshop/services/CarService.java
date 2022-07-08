@@ -6,6 +6,7 @@ import com.zalmanhack.tireshop.domains.User;
 import com.zalmanhack.tireshop.exceptions.RecordMaxCountException;
 import com.zalmanhack.tireshop.exceptions.RecordNotFoundException;
 import com.zalmanhack.tireshop.repos.CarRepo;
+import com.zalmanhack.tireshop.utils.TransactionHandler;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,12 +22,13 @@ public class CarService {
     @Value("${entity.car.max-count}")
     private long maxCount;
 
+    private final TransactionHandler transactionHandler;
     private final CarRepo carRepo;
-
     private final BookingService bookingService;
 
     @Autowired
-    public CarService(CarRepo carRepo, BookingService bookingService) {
+    public CarService(TransactionHandler transactionHandler, CarRepo carRepo, BookingService bookingService) {
+        this.transactionHandler = transactionHandler;
         this.carRepo = carRepo;
         this.bookingService = bookingService;
     }
@@ -50,17 +52,17 @@ public class CarService {
     }
 
     public Car create(Car car, User user, Color color) {
-        System.out.println(carRepo.countByUserIdAndRemovedIsFalse(user.getId()));
-        if(carRepo.countByUserIdAndRemovedIsFalse(user.getId()) >= this.getMaxCount()) {
+        System.out.println(transactionHandler.runInTransaction(() -> carRepo.countByUserIdAndRemovedIsFalse(user.getId())));
+        if(transactionHandler.runInTransaction(() -> carRepo.countByUserIdAndRemovedIsFalse(user.getId()) >= this.getMaxCount())) {
             throw new RecordMaxCountException(Car.class, this.getMaxCount());
         }
         car.setColor(color);
         car.setUser(user);
-        return carRepo.save(car);
+        return transactionHandler.runInTransaction(() -> carRepo.save(car));
     }
 
     public void remove(long id) {
-        Optional<Car> carFromDb = carRepo.findById(id);
+        Optional<Car> carFromDb = transactionHandler.runInTransaction(() -> carRepo.findById(id));
         if(!carFromDb.isPresent()) {
             throw new RecordNotFoundException(Car.class, id);
         }
@@ -72,7 +74,7 @@ public class CarService {
                 throw new RecordNotFoundException(Car.class, id);
             }
             car.setRemoved(true);
-            carRepo.save(car);
+            transactionHandler.runInTransaction(() -> carRepo.save(car));
         } else {
             carRepo.delete(car);
         }

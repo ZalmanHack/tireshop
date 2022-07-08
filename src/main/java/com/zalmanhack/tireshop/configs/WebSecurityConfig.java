@@ -1,9 +1,9 @@
 package com.zalmanhack.tireshop.configs;
 
 import com.zalmanhack.tireshop.services.UserDetailsServiceImpl;
-import com.zalmanhack.tireshop.utils.AuthEntryPointJwt;
-import com.zalmanhack.tireshop.utils.AuthTokenFilter;
-import com.zalmanhack.tireshop.utils.JwtUtils;
+import com.zalmanhack.tireshop.utils.security.AuthEntryPointJwt;
+import com.zalmanhack.tireshop.utils.security.AuthTokenFilter;
+import com.zalmanhack.tireshop.utils.security.JwtUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;

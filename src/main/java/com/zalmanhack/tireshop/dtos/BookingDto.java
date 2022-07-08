@@ -15,9 +15,9 @@ public class BookingDto {
     @NotNull
     private Long userId;
 
-    @NotBlank
-    @Pattern(regexp = "(\\d{2}).(\\d{2}).(\\d{4}) (\\d{2}):(\\d{2}):(\\d{2})")
-    private String appointmentDate;
+//    @NotBlank
+//    @Pattern(regexp = "(\\d{2}).(\\d{2}).(\\d{4}) (\\d{2}):(\\d{2}):(\\d{2})")
+//    private String appointmentDate;
 
     @Valid
     @NotEmpty

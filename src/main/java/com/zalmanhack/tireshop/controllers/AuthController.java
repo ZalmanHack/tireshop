@@ -9,15 +9,13 @@ import com.zalmanhack.tireshop.dtos.responses.TokenRefreshResponse;
 import com.zalmanhack.tireshop.exceptions.TokenRefreshException;
 import com.zalmanhack.tireshop.services.RefreshTokenService;
 import com.zalmanhack.tireshop.services.UserDetailsImpl;
-import com.zalmanhack.tireshop.services.UserService;
-import com.zalmanhack.tireshop.utils.JwtUtils;
+import com.zalmanhack.tireshop.utils.security.JwtUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -33,24 +31,18 @@ import java.util.stream.Collectors;
 public class AuthController {
     private final AuthenticationManager authenticationManager;
 
-    private final UserService userService;
-
-    private final PasswordEncoder encoder;
-
     private final JwtUtils jwtUtils;
 
     private final RefreshTokenService refreshTokenService;
 
 
-    public AuthController(AuthenticationManager authenticationManager, UserService userService, PasswordEncoder encoder, JwtUtils jwtUtils, RefreshTokenService refreshTokenService) {
+    public AuthController(AuthenticationManager authenticationManager, JwtUtils jwtUtils, RefreshTokenService refreshTokenService) {
         this.authenticationManager = authenticationManager;
-        this.userService = userService;
-        this.encoder = encoder;
         this.jwtUtils = jwtUtils;
         this.refreshTokenService = refreshTokenService;
     }
 
-    @PostMapping("/signin")
+    @PostMapping("/sign-in")
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
         Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
         SecurityContextHolder.getContext().setAuthentication(authentication);
@@ -65,8 +57,8 @@ public class AuthController {
                 userDetails.getUsername(), userDetails.getEmail(), roles));
     }
 
-    @PostMapping("/refreshtoken")
-    public ResponseEntity<?> refreshtoken(@Valid @RequestBody TokenRefreshRequest request) {
+    @PostMapping("/refresh-token")
+    public ResponseEntity<?> refreshToken(@Valid @RequestBody TokenRefreshRequest request) {
         String requestRefreshToken = request.getRefreshToken();
 
         return refreshTokenService.findByToken(requestRefreshToken)

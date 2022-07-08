@@ -2,22 +2,24 @@ package com.zalmanhack.tireshop.controllers;
 
 import com.fasterxml.jackson.annotation.JsonView;
 import com.zalmanhack.tireshop.domains.*;
-import com.zalmanhack.tireshop.domains.enums.Role;
 import com.zalmanhack.tireshop.dtos.BookingDto;
-import com.zalmanhack.tireshop.repos.BookingRepo;
+import com.zalmanhack.tireshop.dtos.requests.CreateBookingRequest;
+import com.zalmanhack.tireshop.dtos.requests.GetAvailableTimeRequest;
+import com.zalmanhack.tireshop.dtos.responses.AvailableTimeResponse;
 import com.zalmanhack.tireshop.services.*;
+import com.zalmanhack.tireshop.utils.validations.ComplianceCompositions;
 import com.zalmanhack.tireshop.views.BookingView;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-import javax.annotation.security.RolesAllowed;
 import javax.validation.Valid;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -37,48 +39,47 @@ public class BookingController {
     private final TimetableService timetableService;
     private final CarService carService;
     private final UserService userService;
-    private final BookedServiceService bookedServiceService;
+    private final TemplateServiceService templateServiceService;
 
     @Autowired
-    public BookingController(ModelMapper modelMapper, BookingService bookingService, TimetableService timetableService, CarService carService, UserService userService, BookedServiceService bookedServiceService) {
+    public BookingController(ModelMapper modelMapper, BookingService bookingService, TimetableService timetableService, CarService carService, UserService userService, TemplateServiceService templateServiceService) {
         this.modelMapper = modelMapper;
         this.bookingService = bookingService;
         this.timetableService = timetableService;
         this.carService = carService;
         this.userService = userService;
-        this.bookedServiceService = bookedServiceService;
+        this.templateServiceService = templateServiceService;
     }
 
-    @RolesAllowed(Role.Names.ADMIN)
+    @PreAuthorize("hasAuthority('ADMIN')")
     @GetMapping(value = "/get-template")
-    public ResponseEntity<Object> getTemplate(@AuthenticationPrincipal UserDetails user) {
-        System.out.println(user.getAuthorities());
+    public ResponseEntity<Object> getTemplate(@AuthenticationPrincipal UserDetailsImpl user) {
+        System.out.println(user.getEmail());
         return ResponseEntity.ok(new BookingDto());
     }
 
     //TODO доделать view
     @JsonView(value = {BookingView.Public.class})
     @PutMapping(value = "/add", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public Booking add(@Valid @RequestBody BookingDto bookingDto) {
+    public Booking add(@Valid @RequestBody CreateBookingRequest createBookingRequest) {
+        BookingDto bookingDto = createBookingRequest.getBooking();
         User user = userService.findById(bookingDto.getUserId());
         Car car = carService.findById(bookingDto.getCarId());
-        return bookingService.create(user, car, bookingDto);
+        return bookingService.create(user, car, bookingDto, modelMapper.map(createBookingRequest.getAppointmentDate(), LocalDateTime.class));
     }
 
     //TODO добавить документацию
-    @GetMapping("/timetable")
-    public List<String> getTimetable(@RequestParam(name = "range") short range,
-                                             @RequestParam(name = "duration") short duration,
-                                         @RequestParam(name = "composite", defaultValue = "false") boolean composite) {
-        LocalDate currentDate = LocalDate.of(2022,6,10);
-        LocalDate endDate = currentDate.plusDays(range - 1);
+    @PostMapping("/available-time")
+    public AvailableTimeResponse getTimetable(@Valid @ComplianceCompositions @RequestBody GetAvailableTimeRequest getAvailableTimeRequest) {
+        LocalDate currentDate = LocalDate.now();
+        LocalDate endDate = currentDate.plusDays(getAvailableTimeRequest.getRangeDays() - 1);
         List<Timetable> timetableChanges = timetableService.findTimetableChanges(currentDate, endDate);
-
-        List<LocalDateTime> availableDateTime = bookingService.findAvailableDateTimeForRangeDates(timetableChanges, currentDate, endDate, composite);
-
-        return bookingService.findAvailableDateTimeForRangeDates(timetableChanges, currentDate, endDate, composite)
+        List<LocalDateTime> allAvailableDateTime = bookingService.findAvailableDateTimeForRangeDates(timetableChanges, currentDate, endDate, getAvailableTimeRequest.getComposite());
+        Duration durationBooking = bookingService.getDuration(getAvailableTimeRequest.getBooking());
+        Duration intervalToOrder = templateServiceService.findById(getAvailableTimeRequest.getBooking().getBookedServices().get(0).getId()).getIntervalToOrder();
+        return new AvailableTimeResponse(durationBooking.toMinutes(), intervalToOrder.toMinutes(), bookingService.findAvailableDateTimeForBooking(getAvailableTimeRequest.getBooking(), durationBooking, intervalToOrder, allAvailableDateTime)
                 .stream()
                 .map(adt -> adt.format(DateTimeFormatter.ofPattern(stamp)))
-                .collect(Collectors.toList());
+                .collect(Collectors.toList()));
     }
 }

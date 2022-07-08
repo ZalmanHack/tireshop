@@ -2,12 +2,13 @@ package com.zalmanhack.tireshop.domains;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.zalmanhack.tireshop.domains.abstracts.AbstractService;
-import com.zalmanhack.tireshop.domains.templates.TemplateService;
+import com.zalmanhack.tireshop.utils.converters.DurationConverter;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
 import javax.persistence.*;
+import javax.validation.constraints.Min;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -41,6 +42,12 @@ public class BookedService extends AbstractService {
 
     @Column(columnDefinition = "TIMESTAMP")
     private LocalDateTime dateOfEndWork;
+
+    @Convert(converter = DurationConverter.class)
+    private Duration duration = Duration.ZERO;
+
+    @Min(0)
+    private long price;
 
 //    @PrePersist
 //    private void init() {

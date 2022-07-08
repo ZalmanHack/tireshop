@@ -20,8 +20,8 @@ public class BookedServiceDto {
     @NotEmpty
     private List<BookedOptionDto> bookedOptions;
 
-    @NotBlank
-    @Pattern(regexp = "(\\d{2}).(\\d{2}).(\\d{4}) (\\d{2}):(\\d{2}):(\\d{2})")
-    private String dateOfStartWork;
+//    @NotBlank
+//    @Pattern(regexp = "(\\d{2}).(\\d{2}).(\\d{4}) (\\d{2}):(\\d{2}):(\\d{2})")
+//    private String dateOfStartWork;
 
 }

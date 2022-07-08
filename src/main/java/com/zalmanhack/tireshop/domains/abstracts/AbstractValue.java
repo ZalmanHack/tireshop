@@ -1,10 +1,11 @@
 package com.zalmanhack.tireshop.domains.abstracts;
 
-import com.zalmanhack.tireshop.utils.DurationConverter;
+import com.zalmanhack.tireshop.utils.converters.DurationConverter;
 import lombok.Data;
 import lombok.ToString;
 
 import javax.persistence.*;
+import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
@@ -33,8 +34,9 @@ public class AbstractValue {
     private String value;
 
     @Convert(converter = DurationConverter.class)
-    private Duration duration;
+    private Duration duration = Duration.ZERO;
 
     @NotNull
-    private long price;
+    @Min(0)
+    private Long price;
 }

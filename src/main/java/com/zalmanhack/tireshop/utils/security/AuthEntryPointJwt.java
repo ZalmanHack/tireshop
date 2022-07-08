@@ -1,4 +1,4 @@
-package com.zalmanhack.tireshop.utils;
+package com.zalmanhack.tireshop.utils.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zalmanhack.tireshop.exceptions.ErrorMessage;

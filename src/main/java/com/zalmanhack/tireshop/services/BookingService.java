@@ -3,10 +3,12 @@ package com.zalmanhack.tireshop.services;
 import com.zalmanhack.tireshop.domains.*;
 import com.zalmanhack.tireshop.domains.enums.OrderStatus;
 import com.zalmanhack.tireshop.domains.enums.Week;
+import com.zalmanhack.tireshop.dtos.BookedOptionDto;
 import com.zalmanhack.tireshop.dtos.BookedServiceDto;
 import com.zalmanhack.tireshop.dtos.BookingDto;
 import com.zalmanhack.tireshop.repos.BookingRepo;
 import com.zalmanhack.tireshop.utils.BookingUtil;
+import com.zalmanhack.tireshop.utils.TransactionHandler;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,19 +33,23 @@ public class BookingService {
     @Value("${timetable.slot-duration}")
     private short slotDuration;
 
+    private final TransactionHandler transactionHandler;
     private final ModelMapper modelMapper;
     private final BookingRepo bookingRepo;
     private final WorkWeekService workWeekService;
     private final BookedServiceService bookedServiceService;
+    private final TemplateValueService templateValueService;
     private final TemplateServiceService templateServiceService;
 
 
     @Autowired
-    public BookingService(ModelMapper modelMapper, BookingRepo bookingRepo, WorkWeekService workWeekService, BookedServiceService bookedServiceService, TemplateServiceService templateServiceService) {
+    public BookingService(TransactionHandler transactionHandler, ModelMapper modelMapper, BookingRepo bookingRepo, WorkWeekService workWeekService, BookedServiceService bookedServiceService, TemplateValueService templateValueService, TemplateServiceService templateServiceService) {
+        this.transactionHandler = transactionHandler;
         this.modelMapper = modelMapper;
         this.bookingRepo = bookingRepo;
         this.workWeekService = workWeekService;
         this.bookedServiceService = bookedServiceService;
+        this.templateValueService = templateValueService;
         this.templateServiceService = templateServiceService;
     }
 
@@ -108,7 +114,8 @@ public class BookingService {
             nextTimetable = timetableIterator.next();
         }
 
-        List<Booking> allRangeBookings = bookingRepo.findByAppointmentDateGreaterThanEqualAndAndAppointmentDateLessThanEqualOrderByAppointmentDate(currentDate.atTime(LocalTime.MIDNIGHT), endDate.atTime(LocalTime.MIDNIGHT));
+        LocalDate finalCurrentDate = currentDate;
+        List<Booking> allRangeBookings = transactionHandler.runInTransaction(() -> bookingRepo.findByAppointmentDateGreaterThanEqualAndAndAppointmentDateLessThanEqualOrderByAppointmentDate(finalCurrentDate.atTime(LocalTime.MIDNIGHT), endDate.atTime(LocalTime.MIDNIGHT)));
         int fromIndexBookings = 0;
         int toIndexBooking = 0;
 
@@ -139,20 +146,76 @@ public class BookingService {
 
 
 
-    public Booking create(User user, Car car, BookingDto bookingDto) {
+    public Booking create(User user, Car car, BookingDto bookingDto, LocalDateTime appointmentDateTime) {
         Booking booking = new Booking();
         booking.setUser(user);
         booking.setCar(car);
-        booking.setAppointmentDate(modelMapper.map(bookingDto.getAppointmentDate(), LocalDateTime.class));
+        booking.setAppointmentDate(appointmentDateTime);
         booking.setOrderStatus(OrderStatus.IN_PROCESSING);
-        Booking bookingDb = bookingRepo.save(booking);
+        Booking bookingDb = transactionHandler.runInTransaction(() -> bookingRepo.save(booking));
 
         LocalDateTime startWork = bookingDb.getAppointmentDate();
+        Duration duration = Duration.ZERO;
+        long price = 0;
+
         for (BookedServiceDto bookedServiceDto : bookingDto.getBookedServices()) {
             BookedService bookedServiceDb = bookedServiceService.create(bookingDb, startWork, bookedServiceDto);
             startWork = bookedServiceDb.getDateOfEndWork();
+            duration = duration.plus(bookedServiceDb.getDuration());
+            price += bookedServiceDb.getPrice();
         }
 
-        return bookingDb;
+        bookingDb.setDuration(duration);
+        bookingDb.setPrice(price);
+        return transactionHandler.runInTransaction(() -> bookingRepo.save(bookingDb));
+    }
+
+    public Duration getDuration(BookingDto bookingDto) {
+        Duration duration = Duration.ZERO;
+        for (BookedServiceDto bookedServiceDto : bookingDto.getBookedServices()) {
+            for (BookedOptionDto bookedOptionDto : bookedServiceDto.getBookedOptions()) {
+                duration = duration.plus(templateValueService.findById(bookedOptionDto.getBookedValueId()).getDuration());
+            }
+        }
+        return duration;
+    }
+
+    public List<LocalDateTime> findAvailableDateTimeForBooking(BookingDto bookingDto, Duration durationBooking, Duration intervalToOrder, List<LocalDateTime> allAvailableDateTime) {
+
+        allAvailableDateTime = this.removeIntervalToOrder(intervalToOrder, allAvailableDateTime);
+        List<LocalDateTime> result = new ArrayList<>();
+
+        for (int i = 0; i < allAvailableDateTime.size(); i++) {
+            LocalDateTime currentDateTime = allAvailableDateTime.get(i);
+            Duration currentDuration = Duration.ofMinutes(slotDuration);
+            if (durationBooking.compareTo(currentDuration) == 0) {
+                result.add(currentDateTime);
+            } else {
+                for (int j = i + 1; j < allAvailableDateTime.size(); j++) {
+                    LocalDateTime nextDateTime = allAvailableDateTime.get(j);
+                    if (Duration.between(currentDateTime, nextDateTime).equals(currentDuration)) {
+                        currentDuration = currentDuration.plus(Duration.ofMinutes(slotDuration));
+                        if (durationBooking.compareTo(currentDuration) == 0) {
+                            result.add(currentDateTime);
+                            if (i < allAvailableDateTime.size()) {
+                                currentDateTime = allAvailableDateTime.get(++i);
+                                currentDuration = currentDuration.minus(Duration.ofMinutes(slotDuration));
+                            } else {
+                                break;
+                            }
+                        }
+                    }
+                    else {
+                        break;
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
+    private List<LocalDateTime> removeIntervalToOrder(Duration intervalToOrder, List<LocalDateTime> allAvailableDateTime) {
+        LocalDateTime dateTimeStart = LocalDateTime.now().plus(intervalToOrder);
+        return allAvailableDateTime.stream().filter(dateTime -> dateTime.isAfter(dateTimeStart)).collect(Collectors.toList());
     }
 }

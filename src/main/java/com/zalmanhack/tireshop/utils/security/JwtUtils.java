@@ -1,4 +1,4 @@
-package com.zalmanhack.tireshop.utils;
+package com.zalmanhack.tireshop.utils.security;
 
 import com.zalmanhack.tireshop.services.UserDetailsImpl;
 import io.jsonwebtoken.*;

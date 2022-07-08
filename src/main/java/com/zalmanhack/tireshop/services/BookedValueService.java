@@ -1,21 +1,20 @@
 package com.zalmanhack.tireshop.services;
 
 import com.zalmanhack.tireshop.domains.BookedOption;
-import com.zalmanhack.tireshop.domains.BookedService;
 import com.zalmanhack.tireshop.domains.BookedValue;
 import com.zalmanhack.tireshop.domains.templates.TemplateValue;
-import com.zalmanhack.tireshop.dtos.BookedOptionDto;
 import com.zalmanhack.tireshop.repos.BookedValueRepo;
+import com.zalmanhack.tireshop.utils.TransactionHandler;
 import org.springframework.stereotype.Service;
-
-import java.time.Duration;
 
 @Service
 public class BookedValueService {
+    private final TransactionHandler transactionHandler;
     private final BookedValueRepo bookedValueRepo;
     private final TemplateValueService templateValueService;
 
-    public BookedValueService(BookedValueRepo bookedValueRepo, TemplateValueService templateValueService) {
+    public BookedValueService(TransactionHandler transactionHandler, BookedValueRepo bookedValueRepo, TemplateValueService templateValueService) {
+        this.transactionHandler = transactionHandler;
         this.bookedValueRepo = bookedValueRepo;
         this.templateValueService = templateValueService;
     }
@@ -24,6 +23,6 @@ public class BookedValueService {
         TemplateValue templateValue = templateValueService.findById(bookedValueId);
         BookedValue bookedValue = new BookedValue(templateValue);
         bookedValue.setBookedOption(bookedOption);
-        return bookedValueRepo.save(bookedValue);
+        return transactionHandler.runInTransaction(() -> bookedValueRepo.save(bookedValue));
     }
 }

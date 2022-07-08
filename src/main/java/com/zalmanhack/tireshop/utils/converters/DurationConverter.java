@@ -1,4 +1,4 @@
-package com.zalmanhack.tireshop.utils;
+package com.zalmanhack.tireshop.utils.converters;
 
 import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
@@ -10,6 +10,9 @@ public class DurationConverter implements AttributeConverter<Duration, Long> {
 
     @Override
     public Long convertToDatabaseColumn(Duration duration) {
+        if (duration == null) {
+            return 0L;
+        }
         return duration.toMinutes();
     }
 

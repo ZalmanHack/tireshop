@@ -3,16 +3,12 @@ package com.zalmanhack.tireshop.services;
 import com.zalmanhack.tireshop.domains.RefreshToken;
 import com.zalmanhack.tireshop.exceptions.TokenRefreshException;
 import com.zalmanhack.tireshop.repos.RefreshTokenRepo;
-import com.zalmanhack.tireshop.repos.UserRepo;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.zalmanhack.tireshop.utils.TransactionHandler;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Duration;
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -21,11 +17,14 @@ public class RefreshTokenService {
     @Value("${jwt.expiration.ms}")
     private Long refreshTokenDurationMs;
 
+    private final TransactionHandler transactionHandler;
+
     private final RefreshTokenRepo refreshTokenRepo;
 
     private final UserService userService;
 
-    public RefreshTokenService(RefreshTokenRepo refreshTokenRepo, UserService userService) {
+    public RefreshTokenService(TransactionHandler transactionHandler, RefreshTokenRepo refreshTokenRepo, UserService userService) {
+        this.transactionHandler = transactionHandler;
         this.refreshTokenRepo = refreshTokenRepo;
         this.userService = userService;
     }
@@ -41,7 +40,8 @@ public class RefreshTokenService {
         refreshToken.setExpiryDate(Instant.now().plusMillis(refreshTokenDurationMs));
         refreshToken.setToken(UUID.randomUUID().toString());
 
-        refreshToken = refreshTokenRepo.save(refreshToken);
+        RefreshToken finalRefreshToken = refreshToken;
+        refreshToken = transactionHandler.runInTransaction(() -> refreshTokenRepo.save(finalRefreshToken));
         return refreshToken;
     }
 

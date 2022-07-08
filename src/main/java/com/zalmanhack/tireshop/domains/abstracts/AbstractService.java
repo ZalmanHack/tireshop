@@ -1,16 +1,14 @@
 package com.zalmanhack.tireshop.domains.abstracts;
 
-import com.zalmanhack.tireshop.utils.DurationConverter;
+import com.zalmanhack.tireshop.utils.converters.DurationConverter;
 import lombok.Data;
 import lombok.ToString;
-import org.hibernate.validator.constraints.Length;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.time.Duration;
-import java.time.LocalDateTime;
 
 @Data
 @MappedSuperclass
