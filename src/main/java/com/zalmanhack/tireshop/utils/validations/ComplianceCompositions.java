@@ -6,7 +6,7 @@ import java.lang.annotation.*;
 
 @Documented
 @Constraint(validatedBy = ComplianceCompositionsValidator.class)
-@Target( { ElementType.METHOD, ElementType.FIELD, ElementType.PARAMETER})
+@Target( {ElementType.TYPE, ElementType.METHOD, ElementType.FIELD, ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ComplianceCompositions {
     String message() default "Data consistency in the \"composite\" field is not respected";

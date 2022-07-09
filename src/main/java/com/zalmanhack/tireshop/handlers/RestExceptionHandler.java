@@ -65,4 +65,14 @@ public class RestExceptionHandler {
                 null,
                 ((ServletWebRequest) request).getRequest().getRequestURI());
     }
+
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(NotAvailableDateTimeException.class)
+    public ErrorMessage NotAvailableDateTimeException(NotAvailableDateTimeException ex, WebRequest request) {
+        return new ErrorMessage(
+                HttpStatus.BAD_REQUEST,
+                ex.getMessage(),
+                null,
+                ((ServletWebRequest) request).getRequest().getRequestURI());
+    }
 }

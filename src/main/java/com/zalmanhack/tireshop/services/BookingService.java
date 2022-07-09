@@ -6,6 +6,7 @@ import com.zalmanhack.tireshop.domains.enums.Week;
 import com.zalmanhack.tireshop.dtos.BookedOptionDto;
 import com.zalmanhack.tireshop.dtos.BookedServiceDto;
 import com.zalmanhack.tireshop.dtos.BookingDto;
+import com.zalmanhack.tireshop.exceptions.RecordNotFoundException;
 import com.zalmanhack.tireshop.repos.BookingRepo;
 import com.zalmanhack.tireshop.utils.BookingUtil;
 import com.zalmanhack.tireshop.utils.TransactionHandler;
@@ -18,10 +19,12 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -34,23 +37,23 @@ public class BookingService {
     private short slotDuration;
 
     private final TransactionHandler transactionHandler;
-    private final ModelMapper modelMapper;
     private final BookingRepo bookingRepo;
     private final WorkWeekService workWeekService;
     private final BookedServiceService bookedServiceService;
     private final TemplateValueService templateValueService;
     private final TemplateServiceService templateServiceService;
+    private final TimetableService timetableService;
 
 
     @Autowired
-    public BookingService(TransactionHandler transactionHandler, ModelMapper modelMapper, BookingRepo bookingRepo, WorkWeekService workWeekService, BookedServiceService bookedServiceService, TemplateValueService templateValueService, TemplateServiceService templateServiceService) {
+    public BookingService(TransactionHandler transactionHandler, ModelMapper modelMapper, BookingRepo bookingRepo, WorkWeekService workWeekService, BookedServiceService bookedServiceService, TemplateValueService templateValueService, TemplateServiceService templateServiceService, TimetableService timetableService) {
         this.transactionHandler = transactionHandler;
-        this.modelMapper = modelMapper;
         this.bookingRepo = bookingRepo;
         this.workWeekService = workWeekService;
         this.bookedServiceService = bookedServiceService;
         this.templateValueService = templateValueService;
         this.templateServiceService = templateServiceService;
+        this.timetableService = timetableService;
     }
 
     public boolean isCarHasBookings(Car car) {
@@ -102,7 +105,43 @@ public class BookingService {
         return availableDateTimes;
     }
 
-    public List<LocalDateTime> findAvailableDateTimeForRangeDates(List<Timetable> timetableChanges, LocalDate currentDate, LocalDate endDate, boolean composite) {
+    public Booking create(User user, Car car, BookingDto bookingDto, LocalDateTime appointmentDateTime) {
+        Booking booking = new Booking();
+        booking.setUser(user);
+        booking.setCar(car);
+        booking.setAppointmentDate(appointmentDateTime);
+        booking.setOrderStatus(OrderStatus.IN_PROCESSING);
+        Booking bookingDb = transactionHandler.runInTransaction(() -> bookingRepo.save(booking));
+
+        LocalDateTime startWork = bookingDb.getAppointmentDate();
+        Duration duration = Duration.ZERO;
+        long price = 0;
+
+        for (BookedServiceDto bookedServiceDto : bookingDto.getBookedServices()) {
+            BookedService bookedServiceDb = bookedServiceService.create(bookingDb, startWork, bookedServiceDto);
+            startWork = bookedServiceDb.getDateOfEndWork();
+            duration = duration.plus(bookedServiceDb.getDuration());
+            price += bookedServiceDb.getPrice();
+        }
+
+        bookingDb.setClosedDate(appointmentDateTime.plus(duration));
+        bookingDb.setDuration(duration);
+        bookingDb.setPrice(price);
+        return transactionHandler.runInTransaction(() -> bookingRepo.save(bookingDb));
+    }
+
+    public Duration getDuration(BookingDto bookingDto) {
+        Duration duration = Duration.ZERO;
+        for (BookedServiceDto bookedServiceDto : bookingDto.getBookedServices()) {
+            for (BookedOptionDto bookedOptionDto : bookedServiceDto.getBookedOptions()) {
+                duration = duration.plus(templateValueService.findById(bookedOptionDto.getBookedValueId()).getDuration());
+            }
+        }
+        return duration;
+    }
+
+
+    private List<LocalDateTime> findAvailableDateTimeForRangeDates(List<Timetable> timetableChanges, LocalDate currentDate, LocalDate endDate, boolean composite) {
         if (timetableChanges == null || timetableChanges.size() == 0) {
             throw new NullPointerException("No records found in the timetable");
         }
@@ -115,7 +154,9 @@ public class BookingService {
         }
 
         LocalDate finalCurrentDate = currentDate;
-        List<Booking> allRangeBookings = transactionHandler.runInTransaction(() -> bookingRepo.findByAppointmentDateGreaterThanEqualAndAndAppointmentDateLessThanEqualOrderByAppointmentDate(finalCurrentDate.atTime(LocalTime.MIDNIGHT), endDate.atTime(LocalTime.MIDNIGHT)));
+
+        //TODO Добавил 1 день
+        List<Booking> allRangeBookings = transactionHandler.runInTransaction(() -> bookingRepo.findByAppointmentDateGreaterThanEqualAndAndAppointmentDateLessThanEqualOrderByAppointmentDate(finalCurrentDate.atTime(LocalTime.MIDNIGHT), endDate.atTime(LocalTime.MIDNIGHT).plusDays(1)));
         int fromIndexBookings = 0;
         int toIndexBooking = 0;
 
@@ -144,43 +185,7 @@ public class BookingService {
         return result;
     }
 
-
-
-    public Booking create(User user, Car car, BookingDto bookingDto, LocalDateTime appointmentDateTime) {
-        Booking booking = new Booking();
-        booking.setUser(user);
-        booking.setCar(car);
-        booking.setAppointmentDate(appointmentDateTime);
-        booking.setOrderStatus(OrderStatus.IN_PROCESSING);
-        Booking bookingDb = transactionHandler.runInTransaction(() -> bookingRepo.save(booking));
-
-        LocalDateTime startWork = bookingDb.getAppointmentDate();
-        Duration duration = Duration.ZERO;
-        long price = 0;
-
-        for (BookedServiceDto bookedServiceDto : bookingDto.getBookedServices()) {
-            BookedService bookedServiceDb = bookedServiceService.create(bookingDb, startWork, bookedServiceDto);
-            startWork = bookedServiceDb.getDateOfEndWork();
-            duration = duration.plus(bookedServiceDb.getDuration());
-            price += bookedServiceDb.getPrice();
-        }
-
-        bookingDb.setDuration(duration);
-        bookingDb.setPrice(price);
-        return transactionHandler.runInTransaction(() -> bookingRepo.save(bookingDb));
-    }
-
-    public Duration getDuration(BookingDto bookingDto) {
-        Duration duration = Duration.ZERO;
-        for (BookedServiceDto bookedServiceDto : bookingDto.getBookedServices()) {
-            for (BookedOptionDto bookedOptionDto : bookedServiceDto.getBookedOptions()) {
-                duration = duration.plus(templateValueService.findById(bookedOptionDto.getBookedValueId()).getDuration());
-            }
-        }
-        return duration;
-    }
-
-    public List<LocalDateTime> findAvailableDateTimeForBooking(BookingDto bookingDto, Duration durationBooking, Duration intervalToOrder, List<LocalDateTime> allAvailableDateTime) {
+    private List<LocalDateTime> findAvailableDateTimeForBooking(BookingDto bookingDto, Duration durationBooking, Duration intervalToOrder, List<LocalDateTime> allAvailableDateTime) {
 
         allAvailableDateTime = this.removeIntervalToOrder(intervalToOrder, allAvailableDateTime);
         List<LocalDateTime> result = new ArrayList<>();
@@ -217,5 +222,30 @@ public class BookingService {
     private List<LocalDateTime> removeIntervalToOrder(Duration intervalToOrder, List<LocalDateTime> allAvailableDateTime) {
         LocalDateTime dateTimeStart = LocalDateTime.now().plus(intervalToOrder);
         return allAvailableDateTime.stream().filter(dateTime -> dateTime.isAfter(dateTimeStart)).collect(Collectors.toList());
+    }
+
+    //TODO вынести как универсальное решение
+    public Booking findById(long id) {
+        Optional<Booking> optionalBooking = transactionHandler.runInTransaction(() -> bookingRepo.findById(id));
+        if(!optionalBooking.isPresent()) {
+            throw new RecordNotFoundException(Booking.class, id);
+        }
+        return optionalBooking.get();
+    }
+
+    public void setOrderStatus(Booking booking, OrderStatus orderStatus) {
+        booking.setOrderStatus(orderStatus);
+        transactionHandler.runInTransaction(() -> bookingRepo.save(booking));
+    }
+
+    public List<LocalDateTime> getAvailableTimesForBooking(BookingDto bookingDto, Duration durationBooking, LocalDate currentDate, LocalDate endDate) {
+        List<Timetable> timetableChanges = timetableService.findTimetableChanges(currentDate, endDate);
+        List<LocalDateTime> allAvailableDateTime = findAvailableDateTimeForRangeDates(timetableChanges, currentDate, endDate, bookingDto.getComposite());
+        Duration intervalToOrder = templateServiceService.findById(bookingDto.getBookedServices().get(0).getId()).getIntervalToOrder();
+        return findAvailableDateTimeForBooking(bookingDto, durationBooking, intervalToOrder, allAvailableDateTime);
+    }
+
+    public List<LocalDateTime> getAvailableTimesForBooking(BookingDto bookingDto, Duration durationBooking, LocalDateTime appointmentDate) {
+        return getAvailableTimesForBooking(bookingDto, durationBooking, appointmentDate.toLocalDate(), appointmentDate.toLocalDate().plusDays(durationBooking.toDays()));
     }
 }

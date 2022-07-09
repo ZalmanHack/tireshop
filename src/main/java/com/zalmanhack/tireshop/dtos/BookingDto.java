@@ -15,6 +15,9 @@ public class BookingDto {
     @NotNull
     private Long userId;
 
+    @NotNull
+    private Boolean composite;
+
 //    @NotBlank
 //    @Pattern(regexp = "(\\d{2}).(\\d{2}).(\\d{4}) (\\d{2}):(\\d{2}):(\\d{2})")
 //    private String appointmentDate;

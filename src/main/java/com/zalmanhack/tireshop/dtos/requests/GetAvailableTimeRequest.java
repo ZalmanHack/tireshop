@@ -13,11 +13,15 @@ import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 
 @Data
-@NoArgsConstructor
-@EqualsAndHashCode(callSuper = true)
-public class GetAvailableTimeRequest extends AbstractBookingRequest {
+//@NoArgsConstructor
+public class GetAvailableTimeRequest {
     @NotNull
     @Min(1)
     @Max(30)
     private Short rangeDays;
+
+    @NotNull
+    @Valid
+    @ComplianceCompositions
+    private BookingDto booking;
 }
